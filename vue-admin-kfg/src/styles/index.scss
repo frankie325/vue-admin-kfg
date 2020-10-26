@@ -1,0 +1,107 @@
+@import "./variables";
+@import "./mixin.scss";
+
+@each $key, $color in $color-text {
+    //文字颜色
+    .text-#{$key} {
+        color: $color;
+    }
+}
+
+@each $key, $color in $color-border {
+    //边框颜色
+    .bd-#{$key} {
+        border-color: $color;
+    }
+}
+
+@each $key, $color in $color-background {
+    //背景颜色
+    .bg-#{$key} {
+        background-color: $color;
+    }
+}
+
+@for $i from 12 through 48 {
+    // u-font-0   字体大小，取值12-48
+    .font-#{$i} {
+        font-size: $i * 1px;
+    }
+}
+
+@each $key, $value in $text-directions {
+    .text-#{$key} {
+        text-align: $value;
+    }
+}
+
+// 边距设置
+@each $typeKey, $type in $spacing-types {
+    @for $i from 0 through 80 {
+        // .m-0,m-1... | p-0,p-1..    取值为0-80
+        .#{$typeKey}-#{$i} {
+            #{$type}: $i * 1px;
+        }
+    }
+
+    @each $directionKey, $direction in $spacing-directions {
+        @for $i from 0 through 80 {
+            // .m-t-0,m-t-1...,p-t-0,p-t-1..    取值为0-80
+            // .m-r-0,m-r-1...,p-r-0,p-r-1..
+            // .m-b-0,m-b-1...,p-b-0,p-b-1..
+            // .m-l-0,m-l-1...,p-l-0,p-l-1..
+            .#{$typeKey}-#{$directionKey}-#{$i} {
+                #{$type}-#{$direction}: $i * 1px;
+            }
+        }
+    }
+}
+
+// 弹性盒子
+.flex {
+    display: flex;
+}
+
+.flex-c {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.flow-r-nw {
+    flex-flow: row nowrap;
+}
+.flow-r-c {
+    flex-flow: column;
+}
+
+@each $key, $value in $flex-wrap {
+    .flex-#{$key} {
+        flex-wrap: $value;
+    }
+}
+
+@each $key, $value in $flex-direction {
+    .dr-#{$key} {
+        flex-direction: $value;
+    }
+}
+
+@each $key, $value in $flex-jc {
+    .row-#{$key} {
+        justify-content: $value;
+    }
+}
+
+@each $key, $value in $flex-ai {
+    .col-#{$key} {
+        align-items: $value;
+    }
+}
+
+@for $i from 1 through 12 {
+    //flex取值1-12
+    .flex-#{$i} {
+        flex: $i;
+    }
+}

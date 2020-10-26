@@ -1,0 +1,90 @@
+$colors: (
+    primary: #409eff,
+    success: #67c23a,
+    warning: #e6a23c,
+    danger: #f56c6c,
+    info: #909399,
+);
+
+$color-text: (
+    1: #303133,
+    //主要文字颜色
+        2: #606266,
+    //常规文字颜色
+        3: #909399,
+    //次要文字颜色
+        4: #c0c4cc,
+    //占位文字颜色
+);
+
+$color-border: (
+    1: #dcdfe6,
+    //一级边框颜色
+        2: #e4e7ed,
+    //二级边框颜色
+        3: #ebeef5,
+    //三级边框颜色
+        4: #f2f6fc,
+    //四级边框颜色
+);
+
+$color-background: (//以颜色为key值最好使用双引号
+    "white": #ffffff,
+    "black": #000000,
+    "base": #f5f7fa,
+    //基础背景色
+);
+
+//文字对齐方式
+$text-directions: (
+    l: left,
+    c: center,
+    r: right,
+);
+
+// 定义基础字体大小
+// $font-size: (
+//     base: 16,
+//     ...
+// );
+// 边距
+
+$spacing-types: (
+    m: margin,
+    p: padding,
+);
+
+$spacing-directions: (
+    t: top,
+    r: right,
+    b: bottom,
+    l: left,
+);
+
+// 弹性布局
+$flex-jc: (
+    start: flex-start,
+    end: flex-end,
+    center: center,
+    between: space-between,
+    around: space-around,
+);
+
+$flex-ai: (
+    start: flex-start,
+    end: flex-end,
+    center: center,
+    stretch: stretch,
+);
+
+// 弹性布局方向
+$flex-direction: (
+    row: row,
+    column: column,
+);
+
+//换行
+$flex-wrap: (
+    w: wrap,
+    nw: nowrap,
+);
