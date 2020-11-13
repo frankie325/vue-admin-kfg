@@ -39,9 +39,6 @@ export default {
     .main {
         flex: 1;
         height: 100%;
-        &-container {
-            height: calc(100% - 50px);
-        }
     }
 }
 </style>

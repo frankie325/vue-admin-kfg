@@ -26,7 +26,9 @@ export const constantRouterMap = [
             {
                 path: "home",
                 name: "home",
-                title: "首页",
+                meta: {
+                    title: "首页",
+                },
                 component: () => import("@/views/home/index"),
             },
         ],
@@ -49,17 +51,17 @@ export const constantRouterMap = [
 //需要根据权限加载的动态路由表
 export const asyncRouterMap = [
     {
-        path: "/example1",
+        path: "/system",
         component: Layout,
         meta: { roles: ["admin"] }, //页面需要的权限,如果子路由没有设置权限，会继承父级权限
         children: [
             {
-                path: "index",
-                component: () => import("@/views/example1/index"),
-                name: "example1", // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
+                path: "user-config",
+                component: () => import("@/views/system/user-config/index"),
+                name: "user-config", // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
                 meta: {
-                    roles: ["editor"],
-                    title: "测试页1", // 设置该路由在侧边栏和面包屑中展示的名字
+                    // roles: ["editor"],
+                    title: "系统用户设置", // 设置该路由在侧边栏和面包屑中展示的名字
                 },
             },
         ],

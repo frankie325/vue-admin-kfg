@@ -2,7 +2,8 @@ const path = require("path");
 
 module.exports = {
     publicPath: "./",
-
+    // 关闭eslint校验
+    lintOnSave: false,
     configureWebpack: {
         resolve: {
             // 设置路径别名

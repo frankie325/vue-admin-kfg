@@ -71,4 +71,13 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+/*
+隐藏文字 ,element-ui 的<el-menu>标签本身希望里面嵌套的是<el-menu-item>,<el-submenu>,<el-menu-item-group>之一，
+但是却嵌套了<div>,而导致收折就隐藏不了文字。因为我们的递归组件最外层有一个<div>标签
+*/
+
+.el-menu--collapse .el-submenu__title span {
+    display: none;
+}
+</style>

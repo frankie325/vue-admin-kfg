@@ -31,12 +31,12 @@ service.interceptors.response.use(
         let res = response.data;
         // 对响应数据做点什么
         if (res.code !== 0) {
-            if (res.code === 40001) {
+            if (res.code === 40001) {//用户不存在
                 //后台定义的状态码
                 Message.error({
                     message: res.msg,
                 });
-            } else if (res.code === 40002) {
+            } else if (res.code === 40002) {//密码错误
                 Message.error({
                     message: res.msg,
                 });

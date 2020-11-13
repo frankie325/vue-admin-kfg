@@ -38,6 +38,7 @@ const actions = {
     async login({ commit }, userInfo) {
         let { username, password } = userInfo;
         let { data } = await login({ username: username, password: password });
+        console.log(data);
         commit("SET_TOKEN", data.token);
         setToken(data.token);
     },
