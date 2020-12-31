@@ -21,7 +21,7 @@ router.post("/getAllUser", async (req, res) => {
     let pageNum = req.body.pageNum;
     let keyWord = req.body.keyWord;
     let reg = new RegExp(keyWord, "g");
-    let total = await User.count();
+    let total = await User.countDocuments();
     console.log(total);
     let list = await User.find({
         // 关联模糊查询
@@ -70,9 +70,31 @@ router.post("/addUser", async (req, res) => {
     });
 });
 
+// 修改用户信息
+router.put("/editUser", async (req, res) => {
+    // console.log(req.body.id);
+    let id = req.body.id;
+    let username = req.body.username;
+    await User.where({ _id: id }).update({ username: username });
+    // await User.findByIdAndUpdate({ _id: id }, { username: username });
+    //  mongoose提供的findOneAndUpdate、findAndModify的两个方法，默认返回原始的数据，需要将new属性设置为true，返回更新后的数据
+    res.send({
+        code: 0,
+        data: null,
+        msg: "操作成功",
+    });
+});
+
 // 删除用户
 router.delete("/deleteUser", async (req, res) => {
-    
+    let deleteList = req.body.deleteList;
+    console.log(deleteList);
+    await User.deleteMany({ _id: { $in: deleteList } });
+    res.send({
+        code: 0,
+        data: null,
+        msg: "操作成功",
+    });
 });
 
 module.exports = router;

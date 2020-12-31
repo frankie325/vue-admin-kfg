@@ -35,6 +35,15 @@ export function addUser(data) {
     });
 }
 
+// 修改用户信息
+export function editUser(data) {
+    return request({
+        url: "/admin/user/editUser",
+        method: "put",
+        data,
+    });
+}
+
 // 删除用户
 export function deleteUser(data) {
     return request({

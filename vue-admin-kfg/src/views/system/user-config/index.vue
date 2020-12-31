@@ -7,7 +7,7 @@
                 </el-input>
             </div>
             <div style="width:200px" class="text-r">
-                <el-button type="primary" icon="el-icon-plus" @click="showDrawer = true">新增</el-button>
+                <el-button type="primary" icon="el-icon-plus" @click="(showDrawer = true), (status = 1)">新增</el-button>
                 <el-button type="danger" icon="el-icon-delete-solid" @click="deleteData">删除</el-button>
             </div>
         </div>
@@ -16,19 +16,25 @@
                 <el-table-column type="selection" width="55"> </el-table-column>
                 <el-table-column prop="id" label="id" width="250"> </el-table-column>
                 <el-table-column prop="username" label="用户名" width="180"> </el-table-column>
-                <el-table-column label="操作">
-                    <template>
-                        <el-button type="primary" size="small" icon="el-icon-edit">编辑</el-button>
+                <el-table-column label="操作" fixed="right">
+                    <template slot-scope="{ row }">
+                        <el-button type="primary" size="small" icon="el-icon-edit" @click="editUserInfo(row)">编辑</el-button>
                     </template>
                 </el-table-column>
             </el-table>
-            <el-drawer size="40%" title="新增用户" :visible.sync="showDrawer" direction="rtl">
+            <el-drawer
+                size="40%"
+                :title="status === 1 ? '新增用户' : '编辑用户'"
+                :visible.sync="showDrawer"
+                direction="rtl"
+                @closed="userFormData = {}"
+            >
                 <div class="form-wrap p-r-20 p-b-20 flex flow-r-c">
                     <el-form ref="userForm" class="flex-1" :model="userFormData" :rules="rules" label-width="100px">
                         <el-form-item label="用户名" prop="username">
                             <el-input v-model="userFormData.username"></el-input>
                         </el-form-item>
-                        <el-form-item label="密码" prop="password">
+                        <el-form-item label="密码" prop="password" v-if="status === 1">
                             <el-input type="password" v-model="userFormData.password"></el-input>
                         </el-form-item>
                     </el-form>
@@ -45,7 +51,7 @@
 </template>
 
 <script>
-import { addUser, getAllUser, deleteUser } from "@/api/user";
+import { addUser, getAllUser, deleteUser, editUser } from "@/api/user";
 import Pagination from "@/components/pagination/index";
 export default {
     name: "",
@@ -57,10 +63,7 @@ export default {
             userList: [],
             tableHeight: 500,
             showDrawer: false,
-            userFormData: {
-                username: "",
-                password: "",
-            },
+            userFormData: {},
             rules: {
                 username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
                 password: [{ required: true, message: "请输入密码", trigger: "blur" }],
@@ -70,6 +73,7 @@ export default {
             total: 200,
             keyWord: "",
             deleteList: [],
+            status: 1, //1为新增，2为编辑
         };
     },
     methods: {
@@ -90,12 +94,22 @@ export default {
         submit(name) {
             this.$refs[name].validate(async (valid) => {
                 if (valid) {
-                    let data = await addUser(this.userFormData);
-                    this.$message({
-                        message: data.msg,
-                        type: "success",
-                    });
+                    if (this.status === 1) {
+                        let { msg } = await addUser(this.userFormData);
+                        this.$message({
+                            message: msg,
+                            type: "success",
+                        });
+                    } else {
+                        let { msg } = await editUser(this.userFormData);
+                        this.$message({
+                            message: msg,
+                            type: "success",
+                        });
+                    }
+                    this.getPageInfo();
                     this.showDrawer = false;
+                    this.userFormData = {};
                 }
             });
         },
@@ -115,8 +129,32 @@ export default {
             });
         },
         // 删除用户
-        async deleteData() {
-            await deleteUser();
+        deleteData() {
+            this.$confirm("删除后不可恢复, 是否继续?", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning",
+            }).then(async () => {
+                let { msg } = await deleteUser({ deleteList: this.deleteList });
+                if (this.deleteList.length === this.userList.length) {
+                    if (this.pageNum > 1) {
+                        this.pageNum--;
+                    }
+                }
+                this.deleteList = [];
+                this.$message({
+                    message: msg,
+                    type: "success",
+                });
+                this.getPageInfo();
+            });
+        },
+        // 编辑用户信息
+        editUserInfo(row) {
+            console.log(row);
+            this.showDrawer = true;
+            this.status = 2;
+            this.userFormData = row;
         },
     },
     mounted() {
