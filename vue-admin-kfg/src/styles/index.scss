@@ -22,13 +22,19 @@
     }
 }
 
-@for $i from 12 through 48 {
+@for $i from 12 through 80 {
     // u-font-0   字体大小，取值12-48
     .font-#{$i} {
         font-size: $i * 1px;
     }
+    .lh-#{$i} {
+        line-height: $i * 1px;
+    }
 }
 
+.fw-b {
+    font-weight: bold;
+}
 @each $key, $value in $text-directions {
     .text-#{$key} {
         text-align: $value;
@@ -103,5 +109,35 @@
     //flex取值1-12
     .flex-#{$i} {
         flex: $i;
+    }
+}
+
+// 隐藏滚动条
+.scrollbar-hide {
+    &::-webkit-scrollbar {
+        width: 0;
+    }
+    &::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #e8eaec;
+    }
+}
+
+// 文字省略
+.line-e {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@for $i from 1 through 10 {
+    //flex取值1-12
+    .line-#{$i} {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: $i;
     }
 }

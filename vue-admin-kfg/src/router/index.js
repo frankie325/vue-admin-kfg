@@ -53,43 +53,36 @@ export const asyncRouterMap = [
     {
         path: "/system",
         component: Layout,
-        meta: { roles: ["admin"] }, //页面需要的权限,如果子路由没有设置权限，会继承父级权限
+        meta: {
+            auths: ["admin"],
+            title: "系统设置",
+        }, //页面需要的权限,如果子路由没有设置权限，会继承父级权限
         children: [
             {
                 path: "user-config",
-                component: () => import("@/views/system/user-config/index"),
+                component: () => import("@/views/system/user-setting/index"),
                 name: "user-config", // 设定路由的名字，一定要填写不然使用<keep-alive>时会出现各种问题
                 meta: {
-                    // roles: ["editor"],
-                    title: "系统用户设置", // 设置该路由在侧边栏和面包屑中展示的名字
+                    // auths: ["editor"],
+                    title: "用户设置", // 设置该路由在侧边栏和面包屑中展示的名字
                 },
             },
-        ],
-    },
-    {
-        path: "/example2",
-        component: Layout,
-        meta: {
-            roles: ["editor"],
-            title: "测试",
-        },
-        children: [
             {
-                path: "index",
-                component: () => import("@/views/example2/index"),
-                name: "example2",
+                path: "index1",
+                component: () => import("@/views/system/system-menu/index"),
+                name: "index1",
                 meta: {
-                    roles: ["editor"],
-                    title: "测试页2",
+                    auths: ["editor"],
+                    title: "系统菜单",
                 },
             },
             {
                 path: "index2",
-                component: () => import("@/views/example2/example2"),
-                name: "example2",
+                component: () => import("@/views/system/auth-setting/index"),
+                name: "index2",
                 meta: {
-                    roles: ["editor"],
-                    title: "测试页22",
+                    auths: ["editor"],
+                    title: "权限设置",
                 },
             },
         ],
@@ -118,9 +111,9 @@ router.beforeEach(async (to, from, next) => {
                 // 不存在则获取用户信息
                 try {
                     //如果此时用户信息(token)不是最新的，后台会拦截，返回50001,再跳到登录页
-                    let { roles } = await store.dispatch("user/getInfo");
+                    let { auths } = await store.dispatch("user/getInfo");
                     // 获取用户的权限列表后
-                    let accessedRoutes = await store.dispatch("permission/generateRoutes", roles);
+                    let accessedRoutes = await store.dispatch("permission/generateRoutes", auths);
                     //添加通过权限验证的路由表
                     router.addRoutes(accessedRoutes);
                     console.log(store.state.permission.routes);
@@ -136,7 +129,7 @@ router.beforeEach(async (to, from, next) => {
                 }
             }
 
-            next();
+            // next();
         }
     } else {
         // 不存在token则跳转至登录页

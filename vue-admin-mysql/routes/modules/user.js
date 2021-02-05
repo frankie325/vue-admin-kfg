@@ -1,15 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../../model/user-form");
-
+const { queryFun, queryPagination } = require("../../db");
 // 获取用户信息
 router.get("/info", async (req, res) => {
-    let user = await User.findById(req.userId);
+    let data = await queryFun(`select * from user_form where id='${req.userId}';`);
     res.send({
         code: 0,
         data: {
-            username: user.username,
-            auths: user.auths,
+            username: data[0].username,
+            auths: data[0].auths,
         },
         msg: "操作成功",
     });
@@ -20,26 +19,14 @@ router.post("/getAllUser", async (req, res) => {
     let pageSize = req.body.pageSize;
     let pageNum = req.body.pageNum;
     let keyWord = req.body.keyWord;
-    let reg = new RegExp(keyWord, "g");
-    let total = await User.countDocuments();
-    let list = await User.find({
-        // 关联模糊查询
-        $or: [{ username: { $regex: reg } }],
-    })
-        .skip((pageNum - 1) * pageSize)
-        .limit(pageSize);
-    let userList = list.map((val) => {
-        return {
-            _id: val._id,
-            username: val.username,
-            auths: val.auths,
-        };
-    });
+    let data1 = await queryFun("select count(*) as total from user_form");
+    console.log(data1);
+    let data2 = await queryPagination("select * from user_form", pageSize, pageNum);
     res.send({
         code: 0,
         data: {
-            list: userList,
-            totalPages: total,
+            list: data2,
+            totalPages: data1[0].total,
         },
         msg: "操作成功",
     });

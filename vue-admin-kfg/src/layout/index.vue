@@ -33,12 +33,14 @@ export default {
     height: 100%;
     display: flex;
     flex-flow: row nowrap;
+    // overflow-x: auto;
     .sidebar {
         height: 100%;
     }
     .main {
         flex: 1;
         height: 100%;
+        overflow: hidden;//解决ElementUI el-table 在flex下的宽度自适应问题
     }
 }
 </style>

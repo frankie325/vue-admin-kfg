@@ -16,6 +16,9 @@ export default {
 <style lang="scss" scoped>
 .main-container {
     width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
     height: calc(100% - 50px);
+    background-color: map-get($map: $color-background, $key: base);
 }
 </style>

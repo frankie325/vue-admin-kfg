@@ -1,5 +1,5 @@
 //todo 用户登录模块信息
-import { login, info } from "@/api/user";
+import { login, info } from "@/api/system/user";
 import { getToken, setToken, removeToken } from "@/utils/auth";
 
 const getDefaultState = () => {
@@ -7,7 +7,7 @@ const getDefaultState = () => {
         token: getToken(),
         name: "",
         avatar: "",
-        roles: [],
+        auths: [],
     };
 };
 
@@ -28,8 +28,8 @@ const mutations = {
     // SET_AVATAR: (state, avatar) => {
     //     state.avatar = avatar;
     // },
-    SET_ROLES: (state, roles) => {
-        state.roles = roles;
+    SET_AUTHS: (state, auths) => {
+        state.auths = auths;
     },
 };
 
@@ -48,7 +48,7 @@ const actions = {
         console.log(data);
 
         commit("SET_NAME", data.username);
-        commit("SET_ROLES", data.roles);
+        commit("SET_AUTHS", data.auths);
         return data;
     },
 

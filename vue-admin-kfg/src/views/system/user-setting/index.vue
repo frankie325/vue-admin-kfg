@@ -14,7 +14,7 @@
         <div class="table-wrap m-t-20" ref="table-wrap" v-resize="handleResize">
             <el-table border :height="tableHeight" :data="userList" style="width: 100%" @selection-change="select">
                 <el-table-column type="selection" width="55"> </el-table-column>
-                <el-table-column prop="id" label="id" width="250"> </el-table-column>
+                <el-table-column prop="id" label="id" width="320"> </el-table-column>
                 <el-table-column prop="username" label="用户名" width="180"> </el-table-column>
                 <el-table-column label="操作" fixed="right">
                     <template slot-scope="{ row }">
@@ -37,6 +37,15 @@
                         <el-form-item label="密码" prop="password" v-if="status === 1">
                             <el-input type="password" v-model="userFormData.password"></el-input>
                         </el-form-item>
+                        <!-- <el-form-item label="角色" prop="role">
+                            <el-cascader
+                                style="width:100%"
+                                :props="cascaderProps"
+                                clearable
+                                v-model="menuFormData.auth"
+                                :options="authData"
+                            ></el-cascader>
+                        </el-form-item> -->
                     </el-form>
                     <div class="text-r">
                         <el-button type="primary" @click="submit('userForm')">提交</el-button>
@@ -51,8 +60,8 @@
 </template>
 
 <script>
-import { addUser, getAllUser, deleteUser, editUser } from "@/api/user";
-import Pagination from "@/components/pagination/index";
+import { addUser, getAllUser, deleteUser, editUser } from "@/api/system/user.js";
+import Pagination from "@/components/pagination";
 export default {
     name: "",
     components: {
@@ -70,7 +79,7 @@ export default {
             },
             pageSize: 10,
             pageNum: 1,
-            total: 200,
+            total: null,
             keyWord: "",
             deleteList: [],
             status: 1, //1为新增，2为编辑
@@ -130,6 +139,9 @@ export default {
         },
         // 删除用户
         deleteData() {
+            if (this.deleteList.length === 0) {
+                return;
+            }
             this.$confirm("删除后不可恢复, 是否继续?", "提示", {
                 confirmButtonText: "确定",
                 cancelButtonText: "取消",
@@ -166,8 +178,9 @@ export default {
 <style lang="scss" scoped>
 .user-container {
     height: 100%;
-    padding: 20px 20px 0;
     box-sizing: border-box;
+    background-color: #ffffff;
+    padding: 20px 20px 0;
     .table-wrap {
         height: calc(100% - 120px);
         overflow: hidden;

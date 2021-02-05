@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// 用户信息表
 const schema = new mongoose.Schema({
     username: { type: String },
     password: {
@@ -11,8 +12,9 @@ const schema = new mongoose.Schema({
             return require("bcrypt").hashSync(value, 10);
         },
     },
-    roles: { type: Array },
+    auths: { type: Array },
+    roleIds: [mongoose.Schema.Types.ObjectId],
 });
 
 // 第三参数为创建集合,不然mongoose会将category末尾自动添加s来命名
-module.exports = mongoose.model("user", schema, "users");
+module.exports = mongoose.model("user", schema, "users_form");

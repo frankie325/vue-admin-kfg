@@ -1,27 +1,27 @@
 import { constantRouterMap, asyncRouterMap } from "@/router";
 
-function hasPermission(roles, route) {
-    // 假如route.meta.roles=['admin','editor'],说明是超级用户或编辑者都可以访问
+function hasPermission(auths, route) {
+    // 假如route.meta.auths=['admin','editor'],说明是超级用户或编辑者都可以访问
 
     //判断单个路由项中是否包含meta且包含权限字段
-    if (route.meta && route.meta.roles) {
+    if (route.meta && route.meta.auths) {
         //判断此路由项中只要有一个权限字段包含在用户的权限中，则此路由项可以访问，否则返回false
-        return roles.some((role) => route.meta.roles.includes(role));
+        return auths.some((auth) => route.meta.auths.includes(auth));
     } else {
         //没有则说明此路由项任何用户都可以访问
         return true;
     }
 }
 
-export function filterAsyncRoutes(routes, roles) {
+export function filterAsyncRoutes(routes, auths) {
     let res = [];
     // 遍历所有路由表
     routes.forEach((route) => {
         let tmp = { ...route }; //父级路由如果没有权限，其下的所有子路由都没有权限
-        if (hasPermission(roles, tmp)) {
+        if (hasPermission(auths, tmp)) {
             if (tmp.children) {
                 // 如果包含子路由，则继续递归
-                tmp.children = filterAsyncRoutes(tmp.children, roles);
+                tmp.children = filterAsyncRoutes(tmp.children, auths);
             }
             //权限验证通过,此路由项推入res
             res.push(tmp);
@@ -31,8 +31,8 @@ export function filterAsyncRoutes(routes, roles) {
 }
 
 const state = {
-    routes: [],
-    addRoutes: [],
+    routes: [],//存储所有的路由信息
+    addRoutes: [],//存储动态添加的路由信息
 };
 
 const mutations = {
@@ -44,15 +44,15 @@ const mutations = {
 
 const actions = {
     // 根据用户权限生成路由表
-    generateRoutes({ commit }, roles) {
+    generateRoutes({ commit }, auths) {
         return new Promise((resolve) => {
             let accessedRoutes;
             // 如果是超级用户，则拥有所有路由表
-            if (roles.includes("admin")) {
+            if (auths.includes("admin")) {
                 accessedRoutes = asyncRouterMap || [];
             } else {
                 // 否则根据用户权限筛选路由表
-                accessedRoutes = filterAsyncRoutes(asyncRouterMap, roles);
+                accessedRoutes = filterAsyncRoutes(asyncRouterMap, auths);
             }
             commit("SET_ROUTES", accessedRoutes);
             resolve(accessedRoutes);

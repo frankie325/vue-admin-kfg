@@ -9,7 +9,7 @@
                 <span slot="title">{{ onlyOneChild.meta.title }}</span>
             </el-menu-item>
         </template>
-        <el-submenu v-else :index="item.path">
+        <el-submenu v-else :index="resolvePath(item.path)">
             <template slot="title">
                 <i class="el-icon-menu"></i>
                 <span slot="title">{{ item.meta.title }}</span>
@@ -55,7 +55,7 @@ export default {
             if (showingChild.length === 1) {
                 return true;
             }
-            // 当子路由没有时，会展示父级菜单，但是会跳转到404页面
+            // 当子路由没有时，展示父级菜单标题，因为没有子路由，会跳转到404页面
             if (showingChild.length === 0) {
                 this.onlyOneChild = { ...parent, path: "", noShowingChildren: true }; // path会进行覆盖
                 return true;
