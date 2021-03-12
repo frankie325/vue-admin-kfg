@@ -5,8 +5,8 @@ import { getToken, setToken, removeToken } from "@/utils/auth";
 const getDefaultState = () => {
     return {
         token: getToken(),
-        name: "",
-        avatar: "",
+        userInfo: {},
+        // avatar: "",
         auths: [],
     };
 };
@@ -22,8 +22,8 @@ const mutations = {
     SET_TOKEN: (state, token) => {
         state.token = token;
     },
-    SET_NAME: (state, name) => {
-        state.name = name;
+    SET_USERINFO: (state, userInfo) => {
+        state.userInfo = userInfo;
     },
     // SET_AVATAR: (state, avatar) => {
     //     state.avatar = avatar;
@@ -47,7 +47,7 @@ const actions = {
         let { data } = await info();
         console.log(data);
 
-        commit("SET_NAME", data.username);
+        commit("SET_USERINFO", data.userInfo);
         commit("SET_AUTHS", data.auths);
         return data;
     },

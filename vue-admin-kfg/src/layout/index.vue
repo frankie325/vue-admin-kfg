@@ -11,9 +11,9 @@
 </template>
 
 <script>
-import Sidebar from "./components/Sidebar/index";
-import Navbar from "./components/Navbar/index";
-import PageMain from "./components/PageMain/index";
+import Sidebar from "./Sidebar/index";
+import Navbar from "./Navbar/index";
+import PageMain from "./PageMain/index";
 export default {
     name: "",
     data() {

@@ -3,13 +3,14 @@
         <div class="left">
             <Tree
                 title="菜单导航"
-                :defaultProps="treeProps"
                 :data="menuData"
                 :default-expanded-keys="defaultExpandedKeys"
+                :draggable="true"
                 @node-click="clickNode"
                 @addNode="addNode"
                 @editNode="editNode"
                 @deleteNode="deleteNode"
+                @dragNode="dragNode"
             ></Tree>
         </div>
         <el-card class="right">
@@ -21,8 +22,8 @@
             </div>
             <div></div>
             <el-form ref="menuForm" :model="menuFormData" :rules="rules" :disabled="disabled">
-                <el-form-item label="菜单标题" prop="title">
-                    <el-input show-word-limit :maxlength="30" v-model="menuFormData.title" placeholder="请输入菜单标题"></el-input>
+                <el-form-item label="菜单标题" prop="name">
+                    <el-input show-word-limit :maxlength="30" v-model="menuFormData.name" placeholder="请输入菜单标题"></el-input>
                 </el-form-item>
                 <el-form-item label="菜单路径" prop="path">
                     <el-input show-word-limit :maxlength="100" v-model="menuFormData.path" placeholder="请输入菜单路径"></el-input>
@@ -31,12 +32,12 @@
                     <el-input show-word-limit :maxlength="100" v-model="menuFormData.componentPath" placeholder="组件地址"></el-input>
                 </el-form-item>
                 <div class="flex col-end">
-                    <el-form-item class="flex-1" label="关联权限" prop="auth">
+                    <el-form-item class="flex-1" label="关联权限" prop="auth_id">
                         <el-cascader
                             style="width:100%"
                             :props="cascaderProps"
                             clearable
-                            v-model="menuFormData.auth"
+                            v-model="menuFormData.auth_id"
                             :options="authData"
                         ></el-cascader>
                     </el-form-item>
@@ -56,7 +57,7 @@
                     ></el-input-number>
                 </el-form-item>
                 <el-form-item label="导航菜单是否显示">
-                    <el-switch v-model="menuFormData.hidden"> </el-switch>
+                    <el-switch :active-value="1" :inactive-value="0" v-model="menuFormData.isShow"> </el-switch>
                 </el-form-item>
             </el-form>
         </el-card>
@@ -68,6 +69,7 @@
 import Tree from "@/components/tree";
 import AuthManage from "../components/auth-manage";
 import { getAllMenu, createMenu, editMenu, deleteMenu } from "@/api/system/menu.js";
+import { dragMenu } from "@/api/system";
 export default {
     components: {
         Tree,
@@ -77,27 +79,21 @@ export default {
         return {
             showAuthManage: false,
             menuData: [],
-            treeProps: {
-                label: (data) => {
-                    return data.name;
-                },
-                children: "children",
-            },
             cascaderProps: {
                 children: "children",
                 label: "name",
-                value: "auth",
+                value: "id",
                 emitPath: false,
                 checkStrictly: true,
             },
             menuFormData: {
-                hidden: false,
+                isShow: 1,
             },
             rules: {
-                title: [{ required: true, message: "请输入菜单标题", trigger: "blur" }],
+                name: [{ required: true, message: "请输入菜单标题", trigger: "blur" }],
                 path: [{ required: true, message: "请输入菜单路径", trigger: "blur" }],
                 componentPath: [{ required: true, message: "请输入组件地址", trigger: "blur" }],
-                auth: [{ required: true, message: "请选择关联权限", trigger: "change" }],
+                auth_id: [{ required: true, message: "请选择关联权限", trigger: "change" }],
                 sort: [{ type: "number", required: true, message: "排序号不能为空", trigger: "change" }],
             },
             authData: [],
@@ -123,10 +119,10 @@ export default {
             this.disabled = true;
             this.menuFormData = {
                 path: data.path,
-                hidden: data.hidden,
+                isShow: data.isShow,
                 componentPath: data.componentPath,
-                title: data.name,
-                auth: data.auth,
+                name: data.name,
+                auth_id: data.auth_id,
                 sort: data.sort,
                 parentId: data.parentId,
             };
@@ -136,15 +132,16 @@ export default {
             this.optateStatus = 1;
             this.disabled = false;
             this.menuFormData = {
-                hidden: true,
+                isShow: 1,
+                sort: data.children ? data.children.length + 1 : 1,
             };
             setTimeout(() => {
                 this.$refs["menuForm"].clearValidate();
             }, 0);
             if (status === 1) {
-                this.$set(this.menuFormData, "parentId", null);
+                this.$set(this.menuFormData, "parentId", "top");
             } else {
-                this.$set(this.menuFormData, "parentId", data._id);
+                this.$set(this.menuFormData, "parentId", data.id);
             }
         },
         // 编辑节点
@@ -154,13 +151,13 @@ export default {
             this.$refs["menuForm"].clearValidate();
             this.menuFormData = {
                 path: data.path,
-                hidden: data.hidden,
+                isShow: data.isShow,
                 componentPath: data.componentPath,
-                title: data.name,
-                auth: data.auth,
+                name: data.name,
+                auth_id: data.auth_id,
                 sort: data.sort,
                 parentId: data.parentId,
-                _id: data._id,
+                id: data.id,
             };
         },
         // 删除节点
@@ -176,7 +173,7 @@ export default {
             })
                 .then(async () => {
                     let { msg } = await deleteMenu({
-                        _id: data._id,
+                        id: data.id,
                     });
                     this.disabled = true;
                     this.getMuenData();
@@ -187,6 +184,29 @@ export default {
                     }, 0);
                 })
                 .catch(() => {});
+        },
+        // 拖拽节点成功
+        async dragNode(currentNode, targetNode, position) {
+            let params = {
+                currentId: currentNode.id,
+                targetId: targetNode.id,
+                currentParentId: currentNode.parentId,
+                targetParentId: targetNode.parentId,
+                currentSort: currentNode.sort,
+                targetSort: targetNode.sort,
+                position: position,
+                form: "system_menu_form",
+            };
+            let { msg } = await dragMenu(params);
+            this.$message.success(msg);
+            this.menuFormData = {};
+            setTimeout(() => {
+                this.$refs["menuForm"].clearValidate();
+            }, 0);
+            this.disabled = true;
+            await this.getMuenData();
+            this.defaultExpandedKeys = [currentNode.parentId];
+            this.$store.dispatch("permission/changeMenus");
         },
         // 确定保存
         submit(name) {
@@ -206,6 +226,7 @@ export default {
                     setTimeout(() => {
                         this.$refs["menuForm"].clearValidate();
                     }, 0);
+                    this.$store.dispatch("permission/changeMenus");
                 }
             });
         },

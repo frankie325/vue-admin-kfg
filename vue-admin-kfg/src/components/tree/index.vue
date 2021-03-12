@@ -19,14 +19,16 @@
                     ref="el-tree"
                     :data="data"
                     :props="defaultProps"
-                    node-key="_id"
+                    node-key="id"
                     :show-checkbox="showCheckbox"
                     :filter-node-method="filterNode"
                     :default-expanded-keys="defaultExpandedKeys"
                     :default-checked-keys="defaultCheckedKeys"
-                    :check-strictly="true"
+                    :check-strictly="checkStrictly"
                     @node-click="clickNode"
                     @check="check"
+                    :draggable="draggable"
+                    @node-drop="nodeDrop"
                 >
                     <div class="node-warp flex row-between" slot-scope="{ node, data }">
                         <div class="node-name line-e">
@@ -91,6 +93,10 @@ export default {
                 return [];
             },
         },
+        checkStrictly: {
+            type: Boolean,
+            default: false,
+        },
         showCheckbox: {
             type: Boolean,
             default: false,
@@ -103,8 +109,10 @@ export default {
             type: Boolean,
             default: true,
         },
-        //
-        filterKey: {},
+        draggable: {
+            type: Boolean,
+            default: false,
+        },
     },
     watch: {
         searchText(val) {
@@ -152,6 +160,13 @@ export default {
         check(node, data) {
             console.log(node, data);
             this.$emit("check", node, data);
+        },
+        //拖拽节点成功
+        nodeDrop(node, toNode, position, event) {
+            console.log(node, toNode, position, event);
+            let currentNode = node.data;
+            let targetNode = toNode.data;
+            this.$emit("dragNode", currentNode, targetNode, position);
         },
         // 设置复选框模式中选中的节点
         setCheckedKeys(keys) {

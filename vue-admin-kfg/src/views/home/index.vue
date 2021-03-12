@@ -1,13 +1,20 @@
 <template>
     <!-- 首页 -->
-    <div>首页</div>
+    <div>
+        <UploadFile :value.sync="fileValue" :limit="1"></UploadFile>
+    </div>
 </template>
 
 <script>
+import UploadFile from "@/components/upload-file";
 export default {
-    name: "",
+    components: {
+        UploadFile,
+    },
     data() {
-        return {};
+        return {
+            fileValue: [],
+        };
     },
 };
 </script>

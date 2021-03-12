@@ -31,8 +31,13 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
         {
             id: String(user[0].id), //*将用户id加密后，生成token，//可以写其他信息，不止id
+            // exp: new Date().getTime() / 1000 + 10,//payload中也设置token过期时间
+            // iat:new Date().getTime()/1000 - 5//签发的时间，token有效期从回退的时间开始算
         },
-        req.app.get("secret")
+        req.app.get("secret"),
+        {
+            expiresIn: 60 * 60, //以秒为单位
+        }
     );
     res.send({
         code: 0,
@@ -42,12 +47,6 @@ router.post("/login", async (req, res) => {
         },
         msg: "操作成功",
     });
-    // let data = await User.create({
-    //     username: "kfg2",
-    //     password: "123456",
-    //     roles: ["edit"],
-    // });
-    // res.send(data);
 });
 
 module.exports = router;

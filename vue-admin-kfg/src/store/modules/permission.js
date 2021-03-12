@@ -1,5 +1,6 @@
-import { constantRouterMap, asyncRouterMap } from "@/router";
-
+import { frameIn, frameOut, resetRouter } from "@/router";
+import router from "@/router";
+import { getMenuAuth } from "@/api/system/menu";
 function hasPermission(auths, route) {
     // 假如route.meta.auths=['admin','editor'],说明是超级用户或编辑者都可以访问
 
@@ -31,22 +32,52 @@ export function filterAsyncRoutes(routes, auths) {
 }
 
 const state = {
-    routes: [],//存储所有的路由信息
-    addRoutes: [],//存储动态添加的路由信息
+    routes: [], //存储所有的路由信息
+    addRoutes: [], //存储动态添加的路由信息
 };
 
 const mutations = {
     SET_ROUTES: (state, routes) => {
         state.addRoutes = routes; //添加的动态路由表
-        state.routes = constantRouterMap.concat(routes); //添加后所有的路由表
+        state.routes = [...frameIn, ...frameOut].concat(routes); //添加后所有的路由表
     },
 };
+
+//生成路由表
+async function getRouterMap() {
+    let { data } = await getMenuAuth();
+    return menuToRouter(data);
+}
+
+function menuToRouter(data) {
+    return data.map((item) => {
+        let route = {
+            name: item.path,
+            path: item.parentId === "top" ? `/${item.path}` : item.path,
+            component: () => import(`@/${item.componentPath}`),
+            meta: {
+                auths: [item.auth],
+                title: item.name,
+            },
+            isShow: item.isShow === 1 ? true : false,
+        };
+        if (item.children && item.children.length !== 0) {
+            // 重定向,导航面包屑,当点击根路由时会自动跳到子路由的第一项
+            route.redirect = { name: item.children[0].path };
+            route.children = menuToRouter(item.children);
+        }
+        return route;
+    });
+}
 
 const actions = {
     // 根据用户权限生成路由表
     generateRoutes({ commit }, auths) {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             let accessedRoutes;
+            // let asyncRouterMap = getAllRouterMap();
+            let asyncRouterMap = await getRouterMap();
+            // console.log(asyncRouterMap);
             // 如果是超级用户，则拥有所有路由表
             if (auths.includes("admin")) {
                 accessedRoutes = asyncRouterMap || [];
@@ -57,6 +88,12 @@ const actions = {
             commit("SET_ROUTES", accessedRoutes);
             resolve(accessedRoutes);
         });
+    },
+    // 当菜单显示重新更新路由表
+    async changeMenus({ dispatch, rootGetters }) {
+        resetRouter();
+        let accessedRoutes = await dispatch("generateRoutes", rootGetters.auths);
+        router.addRoutes(accessedRoutes);
     },
 };
 

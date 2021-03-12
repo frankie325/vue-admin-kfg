@@ -1,10 +1,10 @@
 <template>
-    <el-dialog :title="modalStatus === 1 ? '新增部门角色' : '修改部门角色'" :visible.sync="show" width="600px" @opened="opened" @closed="closed">
+    <el-dialog :title="modalStatus === 1 ? '新增角色' : '修改角色'" :visible.sync="show" width="600px" @opened="opened" @closed="closed">
         <el-tabs v-model="activeName" @tab-click="handleClick">
             <el-tab-pane label="基本信息" name="基本信息">
-                <el-form ref="roleForm" :model="roleFormData" :rules="rules">
+                <el-form ref="roleForm" :model="modalData" :rules="rules">
                     <el-form-item label="名称" prop="name">
-                        <el-input show-word-limit :maxlength="30" v-model="roleFormData.name" placeholder="请输入名称"></el-input>
+                        <el-input show-word-limit :maxlength="30" v-model="modalData.name" placeholder="请输入名称"></el-input>
                     </el-form-item>
                     <el-form-item label="排序号" prop="sort">
                         <el-input-number
@@ -14,7 +14,7 @@
                             step-strictly
                             controls-position="right"
                             placeholder="请输入排序号"
-                            v-model="roleFormData.sort"
+                            v-model="modalData.sort"
                         ></el-input-number>
                     </el-form-item>
                 </el-form>
@@ -24,12 +24,13 @@
                     ref="tree"
                     :defaultProps="treeProps"
                     :data="treeData"
-                    :default-expanded-keys="roleFormData.menusIds"
-                    :defaultCheckedKeys="roleFormData.menusIds"
+                    :default-expanded-keys="modalData.authIds"
+                    :defaultCheckedKeys="modalData.authIds"
                     showCheckbox
                     :showOprateBtn="false"
                     :showHead="false"
                     @check="selectedNode"
+                    :checkStrictly="true"
                 ></Tree>
             </el-tab-pane>
         </el-tabs>
@@ -41,8 +42,8 @@
 
 <script>
 import Tree from "@/components/tree";
-import { getAllMenu } from "@/api/system/menu.js";
-import { createRole, editRole } from "@/api/system/role.js";
+import { getAllAuth } from "@/api/system/auth.js";
+import { createRole, editRole } from "@/api/system/department-role.js";
 export default {
     components: {
         Tree,
@@ -75,10 +76,9 @@ export default {
                 },
                 children: "children",
             },
-            defaultExpandedKeys: [],
             treeData: [],
-            roleFormData: {
-                menusIds: [],
+            modalData: {
+                authIds: [],
             },
             rules: {
                 name: [{ required: true, message: "权限名称不能为空", trigger: "blur" }],
@@ -90,29 +90,37 @@ export default {
     methods: {
         handleClick() {},
         // 获取菜单树
-        async getMenuData() {
-            let { data } = await getAllMenu();
+        async getAuthData() {
+            let { data } = await getAllAuth();
             this.treeData = data;
         },
         // 选中的节点
         selectedNode(node, data) {
-            this.roleFormData.menusIds = data.checkedKeys;
+            this.modalData.authIds = data.checkedKeys;
         },
         // 确定保存
         submit(name) {
-            console.log(this.$refs["tree"]);
             this.$refs[name].validate(async (valid) => {
                 if (valid) {
                     if (this.modalStatus === 1) {
-                        let { msg } = await createRole(this.roleFormData);
+                        let { msg } = await createRole({ ...this.modalData });
                         this.$message.success(msg);
+                        this.$emit("oprateSuccess", this.modalData.department_id); //传过去要展开的节点
+                        this.closed();
                     } else if (this.modalStatus === 2) {
-                        console.log(11);
-                        let { msg } = await editRole(this.roleFormData);
+                        // 传递userId判断当前的登录用户是否在该角色下
+                        let { data, msg } = await editRole({ ...this.modalData, userId: this.$store.getters.userInfo.id });
                         this.$message.success(msg);
+                        // 如果在该角色下则重新登录
+                        if (data.include) {
+                            this.$store.dispatch("user/removeToken").then(() => {
+                                this.$router.replace("/");
+                            });
+                        } else {
+                            this.$emit("oprateSuccess", this.modalData.department_id); //传过去要展开的节点
+                            this.closed();
+                        }
                     }
-                    this.$emit("oprateSuccess");
-                    this.closed();
                 }
             });
         },
@@ -123,17 +131,17 @@ export default {
             this.show = false;
             this.$refs["tree"].setCheckedKeys([]);
             this.$refs["roleForm"].resetFields();
-            this.roleFormData = {
-                menusIds: [],
+            this.modalData = {
+                authIds: [],
             };
             this.activeName = "基本信息";
             this.$emit("update:modalStatus", 0);
         },
         // 设置复选框模式中选中的节点
-        setCheckedKeys(keys) {},
+        // setCheckedKeys(keys) {},
     },
     mounted() {
-        this.getMenuData();
+        this.getAuthData();
     },
 };
 </script>

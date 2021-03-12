@@ -1,8 +1,9 @@
 <template>
     <div class="auth-setting">
         <div class="left">
-            <Tree
+            <RoleTree
                 title="部门角色"
+                :draggable="true"
                 :defaultProps="treeProps"
                 :data="treeData"
                 :default-expanded-keys="defaultExpandedKeys"
@@ -10,44 +11,55 @@
                 @addNode="addNode"
                 @editNode="editNode"
                 @deleteNode="deleteNode"
-            ></Tree>
+                @dragNode="dragNode"
+            ></RoleTree>
         </div>
         <el-card class="right">
             <div slot="header" style="position:relative" class="flex col-center row-between">
                 <div class="fw-b">人员管理</div>
-                <el-button type="danger" icon="el-icon-delete" style="position:absolute;right:0;width:80px;padding:10px 0" size="medium"
+                <el-button
+                    type="danger"
+                    icon="el-icon-delete"
+                    style="position:absolute;right:0;width:80px;padding:10px 0"
+                    size="medium"
+                    @click="deleteUserData"
                     >删除</el-button
                 >
             </div>
-            <div class="table-wrap" ref="table-wrap" v-resize="handleResize">
-                <el-table :height="tableHeight" :data="tableData" border>
-                    <el-table-column type="selection" width="55"> </el-table-column>
-                    <el-table-column prop="_id" label="_id" width="250"> </el-table-column>
-                    <el-table-column prop="username" label="用户名" width="180"> </el-table-column>
-                    <el-table-column label="操作" fixed="right"> </el-table-column>
-                </el-table>
-            </div>
+            <UserTable :userList="userList" @oprateSuccess="oprateUserSuccess" @select="select"></UserTable>
             <div class="page flex row-end col-center m-t-20">
                 <Pagination :pageSize.sync="pageSize" :pageNum.sync="pageNum" :total="total" @pageRefresh="pageRefresh"></Pagination>
             </div>
         </el-card>
+        <DepartmentModal
+            ref="departmentModal"
+            :modalStatus.sync="departmentModalStatus"
+            v-model="showDepartmentModal"
+            @oprateSuccess="oprateSuccess"
+        ></DepartmentModal>
         <RoleModal ref="roleModal" :modalStatus.sync="modalStatus" v-model="showRoleModal" @oprateSuccess="oprateSuccess"></RoleModal>
     </div>
 </template>
 
 <script>
-import Tree from "@/components/tree";
+import RoleTree from "@/components/tree/role-tree";
 import Pagination from "@/components/pagination";
 import RoleModal from "../components/role-modal";
-import { getAllRole, deleteRole, getRoleUser } from "@/api/system/role.js";
+import DepartmentModal from "../components/department-modal";
+import UserTable from "../components/user-table";
+import { getDepartmentRole, deleteDepartment, deleteRole, getRoleUser, getRoleAuth, dragRoleNode } from "@/api/system/department-role.js";
+import { deleteUser } from "@/api/system/user.js";
 export default {
     components: {
-        Tree,
+        RoleTree,
         Pagination,
         RoleModal,
+        DepartmentModal,
+        UserTable,
     },
     data() {
         return {
+            showDepartmentModal: false,
             showRoleModal: false,
             treeProps: {
                 label: "name",
@@ -59,50 +71,74 @@ export default {
             pageNum: 1,
             total: null,
             treeData: [],
-            tableData: [],
+            userList: [],
             modalStatus: 0, //1为新增，2为修改
             clickNodeId: "",
+            departmentModalStatus: 0, //1为新增，2为修改
+            deleteList: [],
         };
     },
     methods: {
         // 获取部门角色数据
         async getTreeData() {
-            let { data } = await getAllRole();
+            let { data } = await getDepartmentRole();
             this.treeData = data;
-        },
-        async getUserInfo() {
-            let { data } = await getRoleUser({
-                _id: this.clickNodeId,
-                pageSize: this.pageSize,
-                pageNum: this.pageNum,
-            });
-            this.tableData = data.list;
-            this.total = data.totalPages;
         },
         handleResize(size) {
             this.tableHeight = size.height;
         },
+        // 点击节点获取角色下的用户
+        async getUserInfo() {
+            let { data } = await getRoleUser({
+                id: this.clickNodeId,
+                pageSize: this.pageSize,
+                pageNum: this.pageNum,
+            });
+            this.userList = data.list;
+            this.total = data.totalPages;
+        },
         // 点击节点
         async clickNode(nodeData) {
-            this.clickNodeId = nodeData._id;
+            this.clickNodeId = nodeData.id;
+            if (nodeData.depOrRole === 1) {
+                return;
+            }
             this.pageNum = 1;
             this.getUserInfo();
         },
         // 添加节点
         addNode(status, node, data) {
             this.modalStatus = 1;
-            this.showRoleModal = true;
+            this.departmentModalStatus = 1;
             if (status === 1) {
-                this.$set(this.$refs["roleModal"].roleFormData, "parentId", null);
+                this.showDepartmentModal = true;
+                this.$set(this.$refs["departmentModal"].modalData, "parentId", "top");
+                this.$set(this.$refs["departmentModal"].modalData, "sort", data.children ? data.children.length + 1 : 1);
+            } else if (status === 2) {
+                this.showDepartmentModal = true;
+                this.$set(this.$refs["departmentModal"].modalData, "parentId", data.id);
+                this.$set(this.$refs["departmentModal"].modalData, "sort", data.children ? data.children.length + 1 : 1);
             } else {
-                this.$set(this.$refs["roleModal"].roleFormData, "parentId", data._id);
+                this.showRoleModal = true;
+                this.$set(this.$refs["roleModal"].modalData, "department_id", data.id);
+                this.$set(this.$refs["roleModal"].modalData, "sort", data.children ? data.children.length + 1 : 1);
             }
         },
         // 编辑节点
-        editNode(node, data) {
+        async editNode(node, data) {
             this.modalStatus = 2;
-            this.$refs["roleModal"].roleFormData = { ...data };
-            this.showRoleModal = true;
+            this.departmentModalStatus = 2;
+            if (data.depOrRole === 1) {
+                this.$refs["departmentModal"].modalData = { ...data };
+                this.showDepartmentModal = true;
+            } else {
+                this.$refs["roleModal"].modalData = { ...data };
+                let { data: authIds } = await getRoleAuth({
+                    id: data.id,
+                });
+                this.$set(this.$refs["roleModal"].modalData, "authIds", authIds);
+                this.showRoleModal = true;
+            }
         },
         // 删除节点
         deleteNode(node, data) {
@@ -116,17 +152,78 @@ export default {
                 type: "warning",
             })
                 .then(async () => {
-                    let { msg } = await deleteRole({
-                        _id: data._id,
-                    });
-                    this.$message.success(msg);
+                    if (data.depOrRole === 1) {
+                        let { msg } = await deleteDepartment({
+                            id: data.id,
+                        });
+                        this.$message.success(msg);
+                    } else {
+                        let { msg } = await deleteRole({
+                            id: data.id,
+                        });
+                        this.$message.success(msg);
+                    }
                     this.getTreeData();
                 })
                 .catch(() => {});
         },
+        // 选择删除的行
+        select(deleteList) {
+            this.deleteList = deleteList;
+        },
+        // 删除用户
+        deleteUserData() {
+            if (this.deleteList.length === 0) {
+                return;
+            }
+            this.$confirm("删除后不可恢复, 是否继续?", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning",
+            })
+                .then(async () => {
+                    let { msg } = await deleteUser({ deleteList: this.deleteList });
+                    if (this.deleteList.length === this.userList.length) {
+                        if (this.pageNum > 1) {
+                            this.pageNum--;
+                        }
+                    }
+                    this.deleteList = [];
+                    this.$message({
+                        message: msg,
+                        type: "success",
+                    });
+                    this.getUserInfo();
+                })
+                .catch(() => {});
+        },
         // 执行操作成功
-        oprateSuccess() {
-            this.getTreeData();
+        async oprateSuccess(expandId) {
+            await this.getTreeData();
+            expandId ? (this.defaultExpandedKeys = [expandId]) : (this.defaultExpandedKeys = []);
+        },
+        // 操作用户成功
+        oprateUserSuccess() {
+            this.getUserInfo();
+        },
+        // 拖拽节点成功
+        async dragNode(currentNode, targetNode, position) {
+            let params = {
+                currentId: currentNode.id,
+                targetId: targetNode.id,
+                currentParentId: currentNode.depOrRole === 1 ? currentNode.parentId : currentNode.department_id,
+                targetParentId: targetNode.depOrRole === 1 ? targetNode.parentId : targetNode.department_id,
+                currentSort: currentNode.sort,
+                targetSort: targetNode.sort,
+                position: position,
+                currentDepOrRole: currentNode.depOrRole,
+            };
+            let { msg } = await dragRoleNode(params);
+            this.$message.success(msg);
+            await this.getTreeData();
+            currentNode.depOrRole === 1
+                ? (this.defaultExpandedKeys = [currentNode.parentId])
+                : (this.defaultExpandedKeys = [currentNode.department_id]);
         },
         pageRefresh() {
             this.getUserInfo();

@@ -10,6 +10,8 @@
                     @addNode="addNode"
                     @editNode="editNode"
                     @deleteNode="deleteNode"
+                    :draggable="true"
+                    @dragNode="dragNode"
                 ></Tree>
             </div>
             <el-card class="right">
@@ -51,6 +53,7 @@
 <script>
 import Tree from "@/components/tree";
 import { createAuth, editAuth, deleteAuth, getAllAuth } from "@/api/system/auth.js";
+import { dragMenu } from "@/api/system";
 export default {
     components: {
         Tree,
@@ -102,7 +105,9 @@ export default {
         addNode(status, node, data) {
             this.optateStatus = 1;
             this.disabled = false;
-            this.authFormData = {};
+            this.authFormData = {
+                sort: data.children ? data.children.length + 1 : 1,
+            };
             // 排序号通过change校验，当数据清空时，会进行校验，导致校验提示信息出来
             // clearValidate无法清除，需要一个计时器，放入任务队列
             // this.$refs["authForm"].clearValidate();
@@ -110,9 +115,9 @@ export default {
                 this.$refs["authForm"].clearValidate();
             }, 0);
             if (status === 1) {
-                this.$set(this.authFormData, "parentId", null);
+                this.$set(this.authFormData, "parentId", "top");
             } else {
-                this.$set(this.authFormData, "parentId", data._id);
+                this.$set(this.authFormData, "parentId", data.id);
             }
         },
         // 编辑节点
@@ -135,7 +140,7 @@ export default {
             })
                 .then(async () => {
                     let { msg } = await deleteAuth({
-                        _id: data._id,
+                        id: data.id,
                     });
                     this.disabled = true;
                     this.getAuthData();
@@ -147,6 +152,28 @@ export default {
                 })
                 .catch(() => {});
         },
+        // 拖拽节点成功
+        async dragNode(currentNode, targetNode, position) {
+            let params = {
+                currentId: currentNode.id,
+                targetId: targetNode.id,
+                currentParentId: currentNode.parentId,
+                targetParentId: targetNode.parentId,
+                currentSort: currentNode.sort,
+                targetSort: targetNode.sort,
+                position: position,
+                form: "auth_form",
+            };
+            let { msg } = await dragMenu(params);
+            this.$message.success(msg);
+            this.authFormData = {};
+            setTimeout(() => {
+                this.$refs["authForm"].clearValidate();
+            }, 0);
+            this.disabled = true;
+            await this.getAuthData();
+            this.defaultExpandedKeys = [currentNode.parentId];
+        },
         // 确定保存
         submit(name) {
             this.$refs[name].validate(async (valid) => {
@@ -156,7 +183,7 @@ export default {
                         this.$message.success(msg);
                     } else if (this.optateStatus === 2) {
                         let { msg } = await editAuth({
-                            _id: this.authFormData._id,
+                            id: this.authFormData.id,
                             name: this.authFormData.name,
                             auth: this.authFormData.auth,
                             sort: this.authFormData.sort,

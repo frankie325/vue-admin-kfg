@@ -52,3 +52,12 @@ export function deleteUser(data) {
         data,
     });
 }
+
+// 获取用户的所属角色
+export function getUserRole(data) {
+    return request({
+        url: "/admin/user/getUserRole",
+        method: "post",
+        data,
+    });
+}

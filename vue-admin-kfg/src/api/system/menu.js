@@ -9,6 +9,15 @@ export function getAllMenu(params) {
     });
 }
 
+// 获取所有菜单和权限的连接
+export function getMenuAuth(params) {
+    return request({
+        url: "/admin/system/getMenuAuth",
+        method: "get",
+        params,
+    });
+}
+
 // 新增菜单
 export function createMenu(data) {
     return request({
@@ -35,3 +44,4 @@ export function deleteMenu(data) {
         data,
     });
 }
+

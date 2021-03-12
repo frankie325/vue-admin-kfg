@@ -2,9 +2,10 @@ import axios from "axios";
 import { Message } from "element-ui";
 import store from "@/store";
 import { getToken } from "@/utils/auth";
+import router from "@/router";
 
 const service = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: window.globalVar.baseUrl,
     timeout: 5000, // 请求超过时长中断
 });
 
@@ -31,12 +32,14 @@ service.interceptors.response.use(
         let res = response.data;
         // 对响应数据做点什么
         if (res.code !== 0) {
-            if (res.code === 40001) {//用户不存在
+            if (res.code === 40001) {
+                //用户不存在
                 //后台定义的状态码
                 Message.error({
                     message: res.msg,
                 });
-            } else if (res.code === 40002) {//密码错误
+            } else if (res.code === 40002) {
+                //密码错误
                 Message.error({
                     message: res.msg,
                 });
@@ -46,7 +49,12 @@ service.interceptors.response.use(
                     message: res.msg,
                 });
                 store.dispatch("user/removeToken").then(() => {
-                    location.reload(); //清空token后刷新页面，守卫路由判断token不存在，就跳到登录页
+                    //清空token，守卫路由判断token不存在，就跳到登录页
+                    router.replace("/");
+                });
+            } else if (res.code === 50002) {
+                Message.error({
+                    message: res.msg,
                 });
             }
 

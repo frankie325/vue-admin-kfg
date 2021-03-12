@@ -1,58 +1,17 @@
 <template>
     <div class="user-container">
-        <div class="header flex flow-r-nw">
+        <div class="header flex flow-r-nw m-b-20">
             <div class="flex-1">
                 <el-input v-model.trim="keyWord" style="width:400px" placeholder="请输入用户名" class="input-with-select">
                     <el-button slot="append" icon="el-icon-search" @click="search"></el-button>
                 </el-input>
             </div>
             <div style="width:200px" class="text-r">
-                <el-button type="primary" icon="el-icon-plus" @click="(showDrawer = true), (status = 1)">新增</el-button>
+                <el-button type="primary" icon="el-icon-plus" @click="addUser">新增</el-button>
                 <el-button type="danger" icon="el-icon-delete-solid" @click="deleteData">删除</el-button>
             </div>
         </div>
-        <div class="table-wrap m-t-20" ref="table-wrap" v-resize="handleResize">
-            <el-table border :height="tableHeight" :data="userList" style="width: 100%" @selection-change="select">
-                <el-table-column type="selection" width="55"> </el-table-column>
-                <el-table-column prop="id" label="id" width="320"> </el-table-column>
-                <el-table-column prop="username" label="用户名" width="180"> </el-table-column>
-                <el-table-column label="操作" fixed="right">
-                    <template slot-scope="{ row }">
-                        <el-button type="primary" size="small" icon="el-icon-edit" @click="editUserInfo(row)">编辑</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <el-drawer
-                size="40%"
-                :title="status === 1 ? '新增用户' : '编辑用户'"
-                :visible.sync="showDrawer"
-                direction="rtl"
-                @closed="userFormData = {}"
-            >
-                <div class="form-wrap p-r-20 p-b-20 flex flow-r-c">
-                    <el-form ref="userForm" class="flex-1" :model="userFormData" :rules="rules" label-width="100px">
-                        <el-form-item label="用户名" prop="username">
-                            <el-input v-model="userFormData.username"></el-input>
-                        </el-form-item>
-                        <el-form-item label="密码" prop="password" v-if="status === 1">
-                            <el-input type="password" v-model="userFormData.password"></el-input>
-                        </el-form-item>
-                        <!-- <el-form-item label="角色" prop="role">
-                            <el-cascader
-                                style="width:100%"
-                                :props="cascaderProps"
-                                clearable
-                                v-model="menuFormData.auth"
-                                :options="authData"
-                            ></el-cascader>
-                        </el-form-item> -->
-                    </el-form>
-                    <div class="text-r">
-                        <el-button type="primary" @click="submit('userForm')">提交</el-button>
-                    </div>
-                </div>
-            </el-drawer>
-        </div>
+        <UserTable ref="user-table" :userList="userList" @oprateSuccess="oprateUserSuccess" @select="select"></UserTable>
         <div class="footer flex row-end col-center">
             <Pagination :pageSize.sync="pageSize" :pageNum.sync="pageNum" :total="total" @pageRefresh="pageRefresh"></Pagination>
         </div>
@@ -60,34 +19,36 @@
 </template>
 
 <script>
-import { addUser, getAllUser, deleteUser, editUser } from "@/api/system/user.js";
+import { getAllUser, deleteUser } from "@/api/system/user.js";
 import Pagination from "@/components/pagination";
+import TreeSelect from "@/components/tree-select";
+import UserTable from "../components/user-table";
 export default {
     name: "",
     components: {
         Pagination,
+        TreeSelect,
+        UserTable,
     },
     data() {
         return {
             userList: [],
-            tableHeight: 500,
-            showDrawer: false,
-            userFormData: {},
-            rules: {
-                username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
-                password: [{ required: true, message: "请输入密码", trigger: "blur" }],
-            },
             pageSize: 10,
             pageNum: 1,
             total: null,
             keyWord: "",
             deleteList: [],
-            status: 1, //1为新增，2为编辑
         };
     },
+
     methods: {
         handleResize(size) {
             this.tableHeight = size.height;
+        },
+        // 点击新增
+        addUser() {
+            this.$refs["user-table"].showDrawer = true;
+            this.$refs["user-table"].status = 1;
         },
         // 获取页面信息
         async getPageInfo() {
@@ -99,29 +60,6 @@ export default {
             this.userList = data.list;
             this.total = data.totalPages;
         },
-        // 提交新增用户
-        submit(name) {
-            this.$refs[name].validate(async (valid) => {
-                if (valid) {
-                    if (this.status === 1) {
-                        let { msg } = await addUser(this.userFormData);
-                        this.$message({
-                            message: msg,
-                            type: "success",
-                        });
-                    } else {
-                        let { msg } = await editUser(this.userFormData);
-                        this.$message({
-                            message: msg,
-                            type: "success",
-                        });
-                    }
-                    this.getPageInfo();
-                    this.showDrawer = false;
-                    this.userFormData = {};
-                }
-            });
-        },
         // 页码或者每页条数变化
         pageRefresh() {
             this.getPageInfo();
@@ -132,10 +70,8 @@ export default {
             this.getPageInfo();
         },
         // 选择删除的行
-        select(selection) {
-            this.deleteList = selection.map((value) => {
-                return value.id;
-            });
+        select(deleteList) {
+            this.deleteList = deleteList;
         },
         // 删除用户
         deleteData() {
@@ -146,30 +82,28 @@ export default {
                 confirmButtonText: "确定",
                 cancelButtonText: "取消",
                 type: "warning",
-            }).then(async () => {
-                let { msg } = await deleteUser({ deleteList: this.deleteList });
-                if (this.deleteList.length === this.userList.length) {
-                    if (this.pageNum > 1) {
-                        this.pageNum--;
+            })
+                .then(async () => {
+                    let { msg } = await deleteUser({ deleteList: this.deleteList });
+                    if (this.deleteList.length === this.userList.length) {
+                        if (this.pageNum > 1) {
+                            this.pageNum--;
+                        }
                     }
-                }
-                this.deleteList = [];
-                this.$message({
-                    message: msg,
-                    type: "success",
-                });
-                this.getPageInfo();
-            });
+                    this.deleteList = [];
+                    this.$message({
+                        message: msg,
+                        type: "success",
+                    });
+                    this.getPageInfo();
+                })
+                .catch(() => {});
         },
-        // 编辑用户信息
-        editUserInfo(row) {
-            console.log(row);
-            this.showDrawer = true;
-            this.status = 2;
-            this.userFormData = row;
+        oprateUserSuccess() {
+            this.getPageInfo();
         },
     },
-    mounted() {
+    async mounted() {
         this.getPageInfo();
     },
 };
