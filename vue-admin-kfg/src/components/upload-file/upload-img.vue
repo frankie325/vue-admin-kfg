@@ -9,12 +9,15 @@
         :limit="limit"
         :on-exceed="handleExceed"
         :on-success="handleSuccess"
+        :before-upload="beforeUpload"
     >
-        <div class="pre-file" v-for="(file, index) in fileList" :key="index" @click.stop>
-            <span class="pre-file-text" @click="handlePreview(file)">{{ file.name }}</span>
-            <i class="el-icon-close pre-file-icon" @click="handleRemove(index)"></i>
+        <div v-for="(file, index) in fileList" :key="index" class="pre-img" @click.stop>
+            <el-image :src="fileUrl + file.url" fit="fill" style="width: 100%; height: 100%" @click="handlePreview(file)"></el-image>
+            <i class="el-icon-close pre-close" @click.stop="handleRemove(index)"></i>
         </div>
-        <el-button icon="el-icon-upload" size="small">点击上传</el-button>
+        <div class="img-upload">
+            <i class="el-icon-plus upload-icon"></i>
+        </div>
     </el-upload>
 </template>
 
@@ -57,7 +60,8 @@ export default {
             headers: {
                 Authorization: getToken(),
             },
-            fileUrl: window.globalVar.fileUrl,
+            imageUrl: "",
+            fileUrl: window.globalVar.fileUrl + "/",
         };
     },
     methods: {
@@ -92,32 +96,63 @@ export default {
                 `当前限制选择 ${this.limit} 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`
             );
         },
+        // 上传文件之前的钩子，参数为上传的文件，若返回 false 或者返回 Promise 且被 reject，则停止上传
+        beforeUpload(file) {
+            let typeLimit = ["png", "jpeg", "jpg"];
+            let suffix = file.name.substring(file.name.lastIndexOf(".") + 1);
+            if (typeLimit.indexOf(suffix) !== -1) {
+                return true;
+            } else {
+                this.$message.error(`只支持 ${typeLimit.toString()} 类型的文件`);
+                return false;
+            }
+        },
     },
 };
 </script>
 
 <style lang="scss" scoped>
 ::v-deep .el-upload {
-    height: 32px;
+    display: inline-flex;
+    // flex-flow: row wrap;
 }
-.pre-file {
-    height: 100%;
-    display: inline-block;
-    margin-right: 20px;
+
+$wh: 120px;
+.img-upload {
+    width: $wh;
+    height: $wh;
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
     cursor: pointer;
-    .pre-file-text {
-        text-decoration: underline;
-        margin-right: 15px;
-        font-size: 14px;
-        color: #16b390;
-        line-height: 32px;
+    // position: relative;
+    // overflow: hidden;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    .upload-icon {
+        font-size: 24px;
+        color: #8c939d;
     }
-    .pre-file-text:hover {
-        color: #16b39191;
-    }
-    .pre-file-icon {
-        transform: translateY(-3px);
-        font-size: 14px;
+}
+
+.img-upload:hover {
+    border-color: #409eff;
+}
+.pre-img {
+    width: $wh;
+    height: $wh;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    position: relative;
+    display: inline-block;
+    margin-right: 12px;
+    .pre-close {
+        color: red;
+        font-size: 20px;
+        position: absolute;
+        top: 0px;
+        right: 0px;
     }
 }
 </style>

@@ -12,6 +12,9 @@ Vue.use(ElementUI);
 import directive from "@/directive";
 Vue.use(directive);
 
+// css动画效果库
+import animate from "animate.css";
+Vue.use(animate);
 // import "@/styles/common.scss"; //自定义的全局样式
 
 Vue.config.productionTip = false;

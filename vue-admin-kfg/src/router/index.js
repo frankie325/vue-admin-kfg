@@ -43,6 +43,15 @@ export const frameOut = [
     },
 ];
 
+//主框架外显示的
+export const errorPage = [
+    {
+        path: "/404",
+        component: () => import("@/views/error-page/index"),
+    },
+    { path: "*", redirect: "/404" },
+];
+
 //需要根据权限加载的动态路由表
 export const asyncRouterMap = [
     {
@@ -109,6 +118,10 @@ const whiteList = ["/login"]; //免登录白名单
 
 router.beforeEach(async (to, from, next) => {
     console.log(to);
+    console.log(process.env.NODE_ENV);
+    console.log(process.env.BASE_URL);
+    console.log(process.env.VUE_APP_VERSION);
+
     // console.log(router);
     if (store.getters.token) {
         //如果存在token
@@ -133,6 +146,7 @@ router.beforeEach(async (to, from, next) => {
                     //添加通过权限验证的路由表
                     // router.options.routes = store.getters.permissionRoutes;
                     router.addRoutes(accessedRoutes);
+                    router.addRoutes(errorPage);
                     // addRoutes从路由中提取路由表信息，由于此时还没addRoutes，所以解析出来的路由表是个空的
                     // 如果此时直接next(),是找不到对应路由的，调用next({ ...to, replace: true });（to.path）
                     // 其实还是重新跳转to.path的地址(这里会有重定向的报错，添加上面的代码即可解决)，

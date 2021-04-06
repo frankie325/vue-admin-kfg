@@ -1,19 +1,17 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import user from "./modules/user";
-import app from "./modules/app";
-import permission from "./modules/permission";
-import layout from "./modules/layout";
 import getters from "./getters";
+
+// 自动化导入模块
+const files = require.context("./modules", false, /\.js$/);
+const modules = {};
+files.keys().forEach((key) => {
+    modules[key.replace(/(\.\/|\.js)/g, "")] = files(key).default;
+});
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-    modules: {
-        user,
-        app,
-        permission,
-        layout,
-    },
+    modules,
     getters,
 });
